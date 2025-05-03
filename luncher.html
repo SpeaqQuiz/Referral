@@ -22,7 +22,7 @@
 
         // 2. Redirect to Google Sites after a short delay
         setTimeout(() => {
-          window.location.href = `https://sites.google.com/view/speaqquiz?ref=${encodedRef}`;
+          window.location.replace(`https://sites.google.com/view/speaqquiz#ref=${encodeURIComponent(ref)}`);
         }, 300); // delay just a bit to let the fetch fire
       } else {
         document.body.innerHTML = "<p>No referral code provided.</p>";
