@@ -1,79 +1,58 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Speaq Quiz</title> <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    /* Basic styling to make iframe fill page */
-    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
-    #app-container { width: 100%; height: 100%; }
-    iframe { border: none; width: 100%; height: 100%; display: block; }
-  </style>
-</head>
 <body>
-
-  <div id="app-container">
-    </div>
-
+  <div id="app-container"></div>
   <script>
     (function() {
       console.log("LAUNCHER: Page loaded.");
       const container = document.getElementById('app-container');
-      const appsScriptUrl = "https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec"; // Your Apps Script URL
-      const googleSiteUrl = "https://sites.google.com/view/speaqquiz"; // Target Google Site
+      const appsScriptUrl = "https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec";
+      const googleSiteUrl = "https://sites.google.com/view/speaqquiz";
+      // *** YOUR GITHUB PAGES ORIGIN (e.g., https://your-username.github.io) ***
+      const gitHubOrigin = "https://SpeaqQuiz.github.io"; // <-- SET THIS!
 
-      if (!container) {
-          console.error("LAUNCHER: Container div not found!");
-          return;
-      }
+      if (!container) { /* ... error handling ... */ return; }
 
-      // 1. Get referral code from this page's URL
+      // 1. Get referral code
       const currentUrlParams = new URLSearchParams(window.location.search);
       const referralCode = currentUrlParams.get("ref");
       console.log(`LAUNCHER: Referral code from URL: '${referralCode}'`);
 
-      // 2. Construct the final iframe URL
+      // 2. Construct the final iframe URL - ADD host=github parameter
       let finalIframeUrl = appsScriptUrl;
+      let params = [];
       if (referralCode) {
-        finalIframeUrl += `?ref=${encodeURIComponent(referralCode)}`;
+         params.push(`ref=${encodeURIComponent(referralCode)}`);
+      }
+      params.push("host=github"); // <-- ADDED HOST IDENTIFIER
+      if (params.length > 0) {
+          finalIframeUrl += `?${params.join('&')}`;
       }
       console.log(`LAUNCHER: Final iframe URL set to: ${finalIframeUrl}`);
 
-      // 3. Create and embed the iframe
+      // 3. Create and embed the iframe (as before)
       const iframe = document.createElement('iframe');
       iframe.src = finalIframeUrl;
-      // Add sandbox attributes if needed for extra security/features, but be careful
-      // iframe.sandbox = "allow-scripts allow-same-origin allow-forms allow-popups";
+      // ... set width, height, style ...
       container.appendChild(iframe);
       console.log("LAUNCHER: Iframe added.");
 
-      // 4. Listen for messages from the iframe
+      // 4. Listen for messages from the iframe (as before)
       window.addEventListener('message', function(event) {
         console.log("LAUNCHER: Message received from origin:", event.origin);
-
-        // IMPORTANT SECURITY CHECK: Verify the message origin
-        // Adjust this if your Apps Script redirects to a specific googleusercontent.com domain
+        // Origin check is important for security
         if (!event.origin.startsWith("https://script.google.com") && !event.origin.includes("googleusercontent.com")) {
            console.warn("LAUNCHER: Ignored message from unexpected origin:", event.origin);
            return;
         }
-
-        // Check the message content
         if (event.data && event.data.type === 'signupComplete' && event.data.status === 'success') {
-          console.log("LAUNCHER: Received 'signupComplete' success message from iframe.");
-          // Signup successful - start the redirect timer
-          console.log("LAUNCHER: Starting 10-second timer before redirecting to Google Site...");
+          console.log("LAUNCHER: Received 'signupComplete' success message.");
+          console.log("LAUNCHER: Starting 10-second timer before redirecting...");
           setTimeout(function() {
             console.log("LAUNCHER: Redirecting now to:", googleSiteUrl);
-            window.location.href = googleSiteUrl; // Redirect to Google Site
-          }, 10000); // 10000 milliseconds = 10 seconds
-        } else {
-           console.log("LAUNCHER: Received other message or non-success status:", event.data);
-        }
+            window.location.href = googleSiteUrl;
+          }, 10000);
+        } else { /* ... handle other messages if needed ...*/ }
       });
-
     })();
   </script>
-
 </body>
 </html>
