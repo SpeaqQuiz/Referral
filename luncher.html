@@ -1,17 +1,25 @@
-<script>
-  (function() {
-    const params = new URLSearchParams(window.location.search);
-    const ref = params.get('ref');
-    if (ref) {
-      // Store in localStorage
-      localStorage.setItem('speaqReferral', ref);
-
-      // (Optional) Send to server if you still want to
-      const storeUrl = `https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec?action=storeReferral&ref=${encodeURIComponent(ref)}`;
-      fetch(storeUrl, { mode: 'no-cors' });
-    }
-
-    // Redirect quickly
-    window.location.replace("https://sites.google.com/view/speaqquiz");
-  })();
-</script>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Redirecting...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { margin: 0; background: #fff; }
+  </style>
+</head>
+<body>
+  <script>
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      const ref = params.get('ref');
+      if (ref) {
+        const storeUrl = `https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec?action=storeReferral&ref=${encodeURIComponent(ref)}`;
+        fetch(storeUrl, { mode: 'no-cors' });
+      }
+      // Redirect immediately with minimal delay
+      window.location.replace("https://sites.google.com/view/speaqquiz");
+    })();
+  </script>
+</body>
+</html>
