@@ -6,23 +6,14 @@
 </head>
 <body>
   <p>Redirecting to Speaq Quiz...</p>
-  <script>
-    (function() {
-      const params = new URLSearchParams(window.location.search);
-      const ref = params.get('ref');
-
-      if (ref) {
-        const storeUrl = `https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec?action=storeReferral&ref=${encodeURIComponent(ref)}`;
-        console.log("Sending referral to backend:", storeUrl);
-        fetch(storeUrl, { mode: 'no-cors' });
-      } else {
-        console.warn("No referral provided in URL.");
-      }
-
-      // Redirect to Google Site
-      console.log("Redirecting to Speaq Quiz...");
-      window.location.replace('https://sites.google.com/view/speaqquiz');
-    })();
-  </script>
+function() {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref) {
+      localStorage.setItem('pendingReferral', ref);
+    }
+    // Redirect to Google Site
+    window.location.replace("https://sites.google.com/view/speaqquiz");
+  })();
 </body>
 </html>
