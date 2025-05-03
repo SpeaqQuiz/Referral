@@ -5,16 +5,29 @@
   <title>Speaq Quiz - Loading...</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    /* Basic styling to make iframe fill page */
-    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
-    #app-container { width: 100%; height: 100%; text-align: center; /* Optional: center loading text */ padding-top: 50px; /* Optional: position loading text */ }
-    iframe { border: none; width: 100%; height: 100%; display: block; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+    #app-container {
+      height: 100%;
+      width: 100%;
+    }
+    iframe {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
   </style>
 </head>
 <body>
   <div id="app-container">
     <p>Loading application...</p>
-    </div>
+  </div>
 
   <script>
     (function() {
@@ -22,60 +35,47 @@
       const container = document.getElementById('app-container');
       const appsScriptUrl = "https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec";
       const googleSiteUrl = "https://sites.google.com/view/speaqquiz";
-      // *** VERIFY YOUR GITHUB PAGES ORIGIN IS CORRECT ***
-      const gitHubOrigin = "https://speaqquiz.github.io"; // <-- VERIFY THIS
 
-      if (!container) { console.error("LAUNCHER: Container div not found!"); return; }
-
-      // 1. Get referral code
+      // Get referral from URL
       const currentUrlParams = new URLSearchParams(window.location.search);
       const referralCode = currentUrlParams.get("ref");
       console.log(`LAUNCHER: Referral code from URL: '${referralCode}'`);
 
-      // 2. Construct iframe URL with host=github param
+      // Construct iframe URL
       let finalIframeUrl = appsScriptUrl;
       let params = [];
       if (referralCode) {
          params.push(`ref=${encodeURIComponent(referralCode)}`);
       }
-      params.push("host=github"); // Add host identifier
+      params.push("host=github");
       if (params.length > 0) {
           finalIframeUrl += `?${params.join('&')}`;
       }
-      console.log(`LAUNCHER: Final iframe URL set to: ${finalIframeUrl}`);
+      console.log(`LAUNCHER: Final iframe URL: ${finalIframeUrl}`);
 
-      // 3. Create iframe
+      // Create and insert iframe
       const iframe = document.createElement('iframe');
       iframe.src = finalIframeUrl;
-      iframe.width = "100%";
-      iframe.height = "100%";
-      iframe.style.border = "0";
-      iframe.style.display = "block";
 
-      // 4. Embed iframe (This clears the container, removing the loading text)
-      container.innerHTML = ''; // Clear "Loading application..." paragraph
+      // Clear loading text and append iframe
+      container.innerHTML = '';
       container.appendChild(iframe);
-      console.log("LAUNCHER: Iframe added.");
+      console.log("LAUNCHER: Iframe embedded.");
 
-      // 5. Listen for messages from the iframe (Listener code remains the same)
+      // Optional: Listen for success message
       window.addEventListener('message', function(event) {
-        console.log("LAUNCHER: Message received from origin:", event.origin);
-        // IMPORTANT SECURITY CHECK: Verify the message origin
         if (!event.origin.startsWith("https://script.google.com") && !event.origin.includes("googleusercontent.com")) {
-           console.warn("LAUNCHER: Ignored message from unexpected origin:", event.origin);
-           return;
+          console.warn("LAUNCHER: Ignored message from unknown origin:", event.origin);
+          return;
         }
-        if (event.data && event.data.type === 'signupComplete' && event.data.status === 'success') {
-          console.log("LAUNCHER: Received 'signupComplete' success message.");
-          console.log("LAUNCHER: Starting 10-second timer before redirecting...");
-          setTimeout(function() {
-            console.log("LAUNCHER: Redirecting now to:", googleSiteUrl);
+        if (event.data?.type === 'signupComplete' && event.data.status === 'success') {
+          console.log("LAUNCHER: Signup success. Redirecting in 10s...");
+          setTimeout(() => {
             window.location.href = googleSiteUrl;
           }, 10000);
-        } else { /* ... handle other messages ...*/ }
+        }
       });
     })();
   </script>
-
 </body>
 </html>
