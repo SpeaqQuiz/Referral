@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Speaq Quiz Referral</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 2rem; }
+    .message { margin-top: 2rem; font-size: 1.1em; color: #555; }
+  </style>
+</head>
+<body>
+  <h1>Welcome to Speaq Quiz!</h1>
+  <p id="message" class="message">Redirecting you now…</p>
+
+  <script>
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      const ref    = params.get('ref') || '';
+      let target = 'https://sites.google.com/view/speaqquiz';
+      if (ref) target += `?ref=${encodeURIComponent(ref)}`;
+      window.location.replace(target);
+    })();
+  </script>
+</body>
+</html>
