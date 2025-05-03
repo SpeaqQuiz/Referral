@@ -2,29 +2,24 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Speaq Quiz Referral Launcher</title>
+  <title>Redirecting...</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { margin: 0; background: #fff; }
+  </style>
 </head>
 <body>
-  <p>Redirecting you to Speaq Quiz…</p>
   <script>
     (function() {
       const params = new URLSearchParams(window.location.search);
-      const ref    = params.get('ref');
-      
+      const ref = params.get('ref');
       if (ref) {
-        // 1) Store the referral via Apps Script backend
         const storeUrl = `https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec?action=storeReferral&ref=${encodeURIComponent(ref)}`;
         fetch(storeUrl, { mode: 'no-cors' });
       }
-
-      // 2) Redirect immediately to your Apps Script UI
-      window.location.replace(
-        'https://sites.google.com/view/speaqquiz'
-      );
+      // Redirect immediately with minimal delay
+      window.location.replace("https://sites.google.com/view/speaqquiz");
     })();
   </script>
-  <!-- Fallback link -->
-  <p>If you are not redirected automatically, <a href="https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec">click here</a>.</p>
 </body>
 </html>
