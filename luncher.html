@@ -2,27 +2,26 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Speaq Quiz Referral Launcher</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Referral Redirect</title>
 </head>
 <body>
-  <p>Redirecting you to Speaq Quiz…</p>
+  <p>Redirecting to Speaq Quiz...</p>
   <script>
-    (function () {
+    (function() {
       const params = new URLSearchParams(window.location.search);
       const ref = params.get('ref');
 
       if (ref) {
-        // Store referral in backend
         const storeUrl = `https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec?action=storeReferral&ref=${encodeURIComponent(ref)}`;
+        console.log("Sending referral to backend:", storeUrl);
         fetch(storeUrl, { mode: 'no-cors' });
-
-        // Also save to localStorage for use in Google Site
-        localStorage.setItem('pendingReferral', ref);
+      } else {
+        console.warn("No referral provided in URL.");
       }
 
-      // Fast redirect to Google Site
-      window.location.replace("https://sites.google.com/view/speaqquiz");
+      // Redirect to Google Site
+      console.log("Redirecting to Speaq Quiz...");
+      window.location.replace('https://sites.google.com/view/speaqquiz');
     })();
   </script>
 </body>
