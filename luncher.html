@@ -1,36 +1,50 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Referral Redirect</title>
-  <meta charset="UTF-8">
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const params = new URLSearchParams(window.location.search);
-      const ref = params.get("ref");
-
-      if (ref) {
-        const encodedRef = encodeURIComponent(ref);
-
-        // 1. Fire Apps Script call (doesn't block redirect)
-        fetch(`https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec?ref=${encodedRef}`)
-          .then(response => {
-            console.log("Referral logged:", response.status);
-          })
-          .catch(err => {
-            console.warn("Error logging referral:", err);
-          });
-
-        // 2. Redirect to Google Sites after a short delay
-        setTimeout(() => {
-          window.location.replace(`https://sites.google.com/view/speaqquiz#ref=${encodeURIComponent(ref)}`);
-        }, 300); // delay just a bit to let the fetch fire
-      } else {
-        document.body.innerHTML = "<p>No referral code provided.</p>";
-      }
-    });
-  </script>
+  <meta charset="utf-8">
+  <title>Speaq Quiz Referral Launcher</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 2rem; }
+    .message { margin-top: 2rem; font-size: 1.1em; color: #555; }
+  </style>
 </head>
 <body>
-  <p>Redirecting you now...</p>
+  <h1>Welcome to Speaq Quiz!</h1>
+  <p id="message" class="message">Redirecting you now…</p>
+
+  <script>
+    (function() {
+      // 1) Read referral from either query string (?ref=...) or fragment (#ref=...)
+      let ref = null;
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.has('ref')) {
+        ref = searchParams.get('ref');
+      } else if (window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        if (hashParams.has('ref')) {
+          ref = hashParams.get('ref');
+        }
+      }
+
+      // 2) If no ref found, show error
+      if (!ref) {
+        document.getElementById('message').textContent =
+          'No referral code provided. Please use your referral link.';
+        return;
+      }
+
+      // 3) Build and fire the fetch to log the referral (optional)
+      const encoded = encodeURIComponent(ref);
+      fetch(`https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec?ref=${encoded}`, {
+        method: 'GET',
+        mode: 'no-cors'
+      }).catch(() => {/* ignore errors */});
+
+      // 4) Redirect to your Google Site with the query param
+      const target = `https://sites.google.com/view/speaqquiz?ref=${encoded}`;
+      window.location.replace(target);
+    })();
+  </script>
 </body>
 </html>
