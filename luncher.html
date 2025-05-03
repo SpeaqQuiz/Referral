@@ -2,24 +2,78 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Redirecting...</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Speaq Quiz</title> <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { margin: 0; background: #fff; }
+    /* Basic styling to make iframe fill page */
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+    #app-container { width: 100%; height: 100%; }
+    iframe { border: none; width: 100%; height: 100%; display: block; }
   </style>
 </head>
 <body>
+
+  <div id="app-container">
+    </div>
+
   <script>
     (function() {
-      const params = new URLSearchParams(window.location.search);
-      const ref = params.get('ref');
-      if (ref) {
-        const storeUrl = `https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec?action=storeReferral&ref=${encodeURIComponent(ref)}`;
-        fetch(storeUrl, { mode: 'no-cors' });
+      console.log("LAUNCHER: Page loaded.");
+      const container = document.getElementById('app-container');
+      const appsScriptUrl = "https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec"; // Your Apps Script URL
+      const googleSiteUrl = "https://sites.google.com/view/speaqquiz"; // Target Google Site
+
+      if (!container) {
+          console.error("LAUNCHER: Container div not found!");
+          return;
       }
-      // Redirect immediately with minimal delay
-      window.location.replace("https://sites.google.com/view/speaqquiz");
+
+      // 1. Get referral code from this page's URL
+      const currentUrlParams = new URLSearchParams(window.location.search);
+      const referralCode = currentUrlParams.get("ref");
+      console.log(`LAUNCHER: Referral code from URL: '${referralCode}'`);
+
+      // 2. Construct the final iframe URL
+      let finalIframeUrl = appsScriptUrl;
+      if (referralCode) {
+        finalIframeUrl += `?ref=${encodeURIComponent(referralCode)}`;
+      }
+      console.log(`LAUNCHER: Final iframe URL set to: ${finalIframeUrl}`);
+
+      // 3. Create and embed the iframe
+      const iframe = document.createElement('iframe');
+      iframe.src = finalIframeUrl;
+      // Add sandbox attributes if needed for extra security/features, but be careful
+      // iframe.sandbox = "allow-scripts allow-same-origin allow-forms allow-popups";
+      container.appendChild(iframe);
+      console.log("LAUNCHER: Iframe added.");
+
+      // 4. Listen for messages from the iframe
+      window.addEventListener('message', function(event) {
+        console.log("LAUNCHER: Message received from origin:", event.origin);
+
+        // IMPORTANT SECURITY CHECK: Verify the message origin
+        // Adjust this if your Apps Script redirects to a specific googleusercontent.com domain
+        if (!event.origin.startsWith("https://script.google.com") && !event.origin.includes("googleusercontent.com")) {
+           console.warn("LAUNCHER: Ignored message from unexpected origin:", event.origin);
+           return;
+        }
+
+        // Check the message content
+        if (event.data && event.data.type === 'signupComplete' && event.data.status === 'success') {
+          console.log("LAUNCHER: Received 'signupComplete' success message from iframe.");
+          // Signup successful - start the redirect timer
+          console.log("LAUNCHER: Starting 10-second timer before redirecting to Google Site...");
+          setTimeout(function() {
+            console.log("LAUNCHER: Redirecting now to:", googleSiteUrl);
+            window.location.href = googleSiteUrl; // Redirect to Google Site
+          }, 10000); // 10000 milliseconds = 10 seconds
+        } else {
+           console.log("LAUNCHER: Received other message or non-success status:", event.data);
+        }
+      });
+
     })();
   </script>
+
 </body>
 </html>
