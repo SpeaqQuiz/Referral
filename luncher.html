@@ -1,66 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
   <title>Speaq Quiz Signup Launcher</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: sans-serif;
-      display: flex;
-      flex-direction: column;
-    }
-    #signupFrame {
-      flex: 1;
-      border: none;
-    }
-    #status {
-      padding: 1em;
-      text-align: center;
-      background: #f1f1f1;
-      border-top: 1px solid #ddd;
-    }
+    body, html { margin: 0; padding: 0; height: 100%; }
+    #signupFrame { width: 100%; height: 100%; border: none; }
   </style>
 </head>
 <body>
-  <!-- 1) Full-height iframe for your signup app -->
-  <iframe id="signupFrame"></iframe>
-
-  <!-- 2) Status bar below the iframe -->
-  <div id="status">Please sign up below.</div>
+  <iframe id="signupFrame" src=""></iframe>
 
   <script>
-    // Extract referral from URL
     const params = new URLSearchParams(window.location.search);
-    const ref    = params.get("ref");
+    const ref = params.get("ref");
 
-    // Build iframe URL with referral if present
-    const appBase = "https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec";
-    const iframe  = document.getElementById("signupFrame");
-    iframe.src    = ref
-      ? `${appBase}?ref=${encodeURIComponent(ref)}`
-      : appBase;
-    console.log("Launcher: iframe src =", iframe.src);
+    if (ref) {
+      localStorage.setItem("pendingReferral", ref);
+      console.log("Launcher: saved referral to localStorage:", ref);
+    }
 
-    // Listen for the signupComplete message
-    window.addEventListener("message", function(event) {
-      // Only accept from your Apps Script domain
-      if (!event.origin.includes("script.google.com")) return;
+    const iframe = document.getElementById("signupFrame");
+    const base = "https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec";
+    iframe.src = ref ? `${base}?ref=${encodeURIComponent(ref)}` : base;
 
-      const data = event.data;
-      if (data && data.type === "signupComplete" && data.status === "success") {
-        console.log("Launcher: signupComplete received for", data.email);
-        document.getElementById("status").textContent =
-          `Signup successful for ${data.email}! Redirecting in 10 seconds…`;
+    console.log("Launcher: iframe src set to", iframe.src);
 
-        setTimeout(() => {
-          window.location.href = "https://sites.google.com/view/speaqquiz";
-        }, 10000);
+    // POLLING LOOP TO WATCH FOR SIGNUP
+    const interval = setInterval(() => {
+      const complete = localStorage.getItem("signupComplete");
+      if (complete === "true") {
+        console.log("Launcher: Detected signupComplete in localStorage. Redirecting...");
+        localStorage.removeItem("signupComplete");
+        clearInterval(interval);
+        window.location.href = "https://sites.google.com/view/speaqquiz";
       }
-    }, false);
+    }, 1000);
   </script>
 </body>
 </html>
