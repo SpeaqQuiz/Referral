@@ -41,29 +41,37 @@
     // 🟡 4. Log current signup status
     console.log("Polling: Initial signupComplete status =", localStorage.getItem("signupComplete"));
 
-    // 🔁 5. Start polling for signup completion (set by iframe code)
+    // 🔁 5. Start polling for signup completion
     const interval = setInterval(() => {
       const status = localStorage.getItem("signupComplete");
       console.log("Polling: signupComplete =", status);
 
       if (status === "true") {
-        console.log("✅ Launcher: Detected signup success. Redirecting...");
+        console.log("✅ Launcher: Detected signup success via polling. Redirecting...");
         localStorage.removeItem("signupComplete"); // Cleanup
         clearInterval(interval);
-
-        // 🔁 Redirect after successful signup
         window.location.href = "https://sites.google.com/view/speaqquiz"; // Change if needed
       }
     }, 1000);
-  //additional feature
-    window.addEventListener("message", function (event) {
-  if (event.origin !== "https://script.google.com") return; // Only trust Apps Script
-  if (event.data?.type === "signupComplete") {
-    console.log("Signup completed via postMessage");
-    window.location.href = "https://sites.google.com/view/speaqquiz/login";
-  }
-});
 
+    // 📨 6. Listen for postMessage from iframe (backup to polling)
+    window.addEventListener("message", function (event) {
+      const allowedOrigin = "https://n-sdmgdqs6jn67bipv7dflaubylqkwqt7v7oqj33q-0lu-script.googleusercontent.com"; // Replace with actual Apps Script domain
+
+      console.log("postMessage received from:", event.origin);
+
+      if (event.origin !== allowedOrigin) {
+        console.warn("❌ Untrusted origin blocked:", event.origin);
+        return;
+      }
+
+      if (event.data?.type === "signupComplete") {
+        console.log("✅ Launcher: Detected signup success via postMessage. Redirecting...");
+        clearInterval(interval); // Stop polling
+        localStorage.removeItem("signupComplete");
+        window.location.href = "https://sites.google.com/view/speaqquiz/login";
+      }
+    });
   </script>
 </body>
 </html>
