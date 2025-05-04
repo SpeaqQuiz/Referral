@@ -13,6 +13,7 @@
   <iframe id="signupFrame" src=""></iframe>
 
   <script>
+    // Extract referral from query
     const params = new URLSearchParams(window.location.search);
     const ref = params.get("ref");
 
@@ -27,14 +28,13 @@
 
     console.log("Launcher: iframe src set to", iframe.src);
 
-    // POLLING LOOP TO WATCH FOR SIGNUP
+    // Polling method: Check localStorage for signupComplete
     const interval = setInterval(() => {
-      const complete = localStorage.getItem("signupComplete");
-      if (complete === "true") {
-        console.log("Launcher: Detected signupComplete in localStorage. Redirecting...");
-        localStorage.removeItem("signupComplete");
+      if (localStorage.getItem("signupComplete") === "true") {
+        console.log("Launcher: Detected signup success. Redirecting...");
+        localStorage.removeItem("signupComplete"); // Clean up
         clearInterval(interval);
-        window.location.href = "https://sites.google.com/view/speaqquiz";
+        window.location.href = "https://sites.google.com/view/speaqquiz"; // Your login page
       }
     }, 1000);
   </script>
