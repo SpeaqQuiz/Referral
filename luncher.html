@@ -22,37 +22,30 @@
   <iframe id="signupFrame" src=""></iframe>
 
   <script>
-    // 🔍 1. Extract referral email from the URL
     const params = new URLSearchParams(window.location.search);
     const ref = params.get("ref");
-
-    // ❓ Generate a session ID (simple timestamp + random string)
     const sessionId = Date.now() + "-" + Math.random().toString(36).substr(2, 8);
 
-    // 💾 2. Store referral and sessionId locally
     if (ref) {
       localStorage.setItem("pendingReferral", ref);
       localStorage.setItem("pendingSessionId", sessionId);
       console.log("Launcher: Stored ref and sessionId", ref, sessionId);
     }
 
-    // 🔗 3. Load the Apps Script signup page into the iframe with query params
     const iframe = document.getElementById("signupFrame");
     const base = "https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec";
     iframe.src = ref ? `${base}?ref=${encodeURIComponent(ref)}&sid=${encodeURIComponent(sessionId)}` : base;
     console.log("Launcher: iframe src set to", iframe.src);
 
-    // 🔁 4. Poll for signup completion every 5 seconds
     const pollUrl = `${base}?check=session&ref=${encodeURIComponent(ref)}&sid=${encodeURIComponent(sessionId)}`;
-
     const interval = setInterval(() => {
       console.log("Polling backend for signup completion...");
 
       fetch(pollUrl)
-        .then(res => res.json())
-        .then(data => {
-          console.log("Polling response:", data);
-          if (data?.signupComplete === true) {
+        .then(res => res.text()) // ✅ Expect plain text: "true" or "false"
+        .then(text => {
+          console.log("Polling response:", text);
+          if (text === "true") {
             console.log("✅ Signup complete confirmed by backend.");
             clearInterval(interval);
             localStorage.removeItem("signupComplete");
