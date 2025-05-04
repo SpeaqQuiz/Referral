@@ -24,7 +24,7 @@
   <script>
     const params = new URLSearchParams(window.location.search);
     const ref = params.get("ref");
-    const sessionId = Date.now() + "-" + Math.random().toString(36).substr(2, 8);
+    const sessionId = Date.now() + "-" + Math.random().toString(36).substring(2, 8);
 
     if (ref) {
       localStorage.setItem("pendingReferral", ref);
@@ -32,20 +32,21 @@
       console.log("Launcher: Stored ref and sessionId", ref, sessionId);
     }
 
-    const iframe = document.getElementById("signupFrame");
     const base = "https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec";
-    iframe.src = ref ? `${base}?ref=${encodeURIComponent(ref)}&sid=${encodeURIComponent(sessionId)}` : base;
+    const iframe = document.getElementById("signupFrame");
+    iframe.src = ref ? `${base}?ref=${encodeURIComponent(ref)}#${encodeURIComponent(sessionId)}` : base;
     console.log("Launcher: iframe src set to", iframe.src);
 
     const pollUrl = `${base}?check=session&ref=${encodeURIComponent(ref)}&sid=${encodeURIComponent(sessionId)}`;
+
     const interval = setInterval(() => {
       console.log("Polling backend for signup completion...");
 
       fetch(pollUrl)
-        .then(res => res.text()) // ✅ Expect plain text: "true" or "false"
-        .then(text => {
-          console.log("Polling response:", text);
-          if (text === "true") {
+        .then(res => res.text())
+        .then(result => {
+          console.log("Polling response:", result);
+          if (result === "true") {
             console.log("✅ Signup complete confirmed by backend.");
             clearInterval(interval);
             localStorage.removeItem("signupComplete");
