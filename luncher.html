@@ -56,13 +56,14 @@
       }
     }, 1000);
   //additional feature
-     window.addEventListener("message", function (event) {
-    if (event.data && event.data.signupComplete === true) {
-      console.log("✅ Launcher: Signup complete message received from iframe");
-      // Redirect to login page or Google Site
-      window.location.href = "https://sites.google.com/view/speaqquiz/login";
-    }
-  });
+    window.addEventListener("message", function (event) {
+  if (event.origin !== "https://script.google.com") return; // Only trust Apps Script
+  if (event.data?.type === "signupComplete") {
+    console.log("Signup completed via postMessage");
+    window.location.href = "https://sites.google.com/view/speaqquiz/login";
+  }
+});
+
   </script>
 </body>
 </html>
