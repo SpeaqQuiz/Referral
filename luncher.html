@@ -22,56 +22,48 @@
   <iframe id="signupFrame" src=""></iframe>
 
   <script>
-    // 🔍 1. Extract the referral email from the URL
+    // 🔍 1. Extract referral email from the URL
     const params = new URLSearchParams(window.location.search);
     const ref = params.get("ref");
 
-    // 💾 2. Store referral in localStorage
+    // ❓ Generate a session ID (simple timestamp + random string)
+    const sessionId = Date.now() + "-" + Math.random().toString(36).substr(2, 8);
+
+    // 💾 2. Store referral and sessionId locally
     if (ref) {
       localStorage.setItem("pendingReferral", ref);
-      console.log("Launcher: Saved referral to localStorage:", ref);
+      localStorage.setItem("pendingSessionId", sessionId);
+      console.log("Launcher: Stored ref and sessionId", ref, sessionId);
     }
 
-    // 🔗 3. Load the Apps Script signup page into the iframe
+    // 🔗 3. Load the Apps Script signup page into the iframe with query params
     const iframe = document.getElementById("signupFrame");
     const base = "https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec";
-    iframe.src = ref ? `${base}?ref=${encodeURIComponent(ref)}` : base;
+    iframe.src = ref ? `${base}?ref=${encodeURIComponent(ref)}&sid=${encodeURIComponent(sessionId)}` : base;
     console.log("Launcher: iframe src set to", iframe.src);
 
-    // 🟡 4. Log current signup status
-    console.log("Polling: Initial signupComplete status =", localStorage.getItem("signupComplete"));
+    // 🔁 4. Poll for signup completion every 5 seconds
+    const pollUrl = `${base}?check=session&ref=${encodeURIComponent(ref)}&sid=${encodeURIComponent(sessionId)}`;
 
-    // 🔁 5. Start polling for signup completion
     const interval = setInterval(() => {
-      const status = localStorage.getItem("signupComplete");
-      console.log("Polling: signupComplete =", status);
+      console.log("Polling backend for signup completion...");
 
-      if (status === "true") {
-        console.log("✅ Launcher: Detected signup success via polling. Redirecting...");
-        localStorage.removeItem("signupComplete"); // Cleanup
-        clearInterval(interval);
-        window.location.href = "https://sites.google.com/view/speaqquiz"; // Change if needed
-      }
-    }, 1000);
+      fetch(pollUrl)
+        .then(res => res.json())
+        .then(data => {
+          console.log("Polling response:", data);
+          if (data?.signupComplete === true) {
+            console.log("✅ Signup complete confirmed by backend.");
+            clearInterval(interval);
+            localStorage.removeItem("signupComplete");
+            localStorage.removeItem("pendingReferral");
+            localStorage.removeItem("pendingSessionId");
 
-    // 📨 6. Listen for postMessage from iframe (backup to polling)
-    window.addEventListener("message", function (event) {
-      const allowedOrigin = "https://n-sdmgdqs6jn67bipv7dflaubylqkwqt7v7oqj33q-0lu-script.googleusercontent.com"; // Replace with actual Apps Script domain
-
-      console.log("postMessage received from:", event.origin);
-
-      if (event.origin !== allowedOrigin) {
-        console.warn("❌ Untrusted origin blocked:", event.origin);
-        return;
-      }
-
-      if (event.data?.type === "signupComplete") {
-        console.log("✅ Launcher: Detected signup success via postMessage. Redirecting...");
-        clearInterval(interval); // Stop polling
-        localStorage.removeItem("signupComplete");
-        window.location.href = "https://sites.google.com/view/speaqquiz/login";
-      }
-    });
+            window.location.href = "https://sites.google.com/view/speaqquiz";
+          }
+        })
+        .catch(err => console.error("Polling error:", err));
+    }, 5000);
   </script>
 </body>
 </html>
