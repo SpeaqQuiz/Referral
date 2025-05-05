@@ -106,7 +106,7 @@
 
     let pollingIntervalId = null;
     let pollingAttempts   = 0;
-    const maxPollingAttempts    = 60;    // 5 minutes total
+    const maxPollingAttempts    = 10;    // 5 minutes total
     const pollingIntervalMillis = 5000;  // every 5s
     const redirectDelayMillis   = 10000; // 10s after success
 
@@ -135,23 +135,31 @@
     });
 
     // Polling
-    function poll() {
-      pollingAttempts++;
-      if (pollingAttempts > maxPollingAttempts) {
+function poll() {
+  pollingAttempts++;
+  console.log(`LAUNCHER: Poll #${pollingAttempts} for session ${sessionId}`);
+  if (pollingAttempts > maxPollingAttempts) {
+    console.warn(`LAUNCHER: Timeout after ${maxPollingAttempts} polls.`);
+    clearInterval(pollingIntervalId);
+    modal.style.display = 'flex';
+    return;
+  }
+  fetch(`${statusCheckerUrl}?sessionId=${encodeURIComponent(sessionId)}`)
+    .then(r => {
+      console.log(`LAUNCHER: HTTP ${r.status}`);
+      return r.json();
+    })
+    .then(data => {
+      console.log("LAUNCHER: Status response:", data);
+      if (data.status === 'success') {
+        console.log("LAUNCHER: Success—redirecting soon");
         clearInterval(pollingIntervalId);
-        modal.style.display = 'flex';
-        return;
+        setTimeout(() => window.location.href = googleSiteUrl, redirectDelayMillis);
       }
-      fetch(`${statusCheckerUrl}?sessionId=${encodeURIComponent(sessionId)}`)
-        .then(r => r.json())
-        .then(data => {
-          if (data.status === 'success') {
-            clearInterval(pollingIntervalId);
-            setTimeout(() => window.location.href = googleSiteUrl, redirectDelayMillis);
-          }
-        })
-        .catch(console.error);
-    }
+    })
+    .catch(err => console.error("LAUNCHER: Poll error:", err));
+}
+
 
     // start
     setTimeout(() => {
