@@ -1,118 +1,165 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>Speaq Quiz - Loading...</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        /* Ensure padding/borders are included in width/height */
-        * { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
-        #app-container { width: 100%; height: 100%; }
-        iframe { border: none; width: 100%; height: 100%; display: block; }
-    </style>
+  <meta charset="utf-8">
+  <title>Speaq Quiz - Loading...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin:0; padding:0; height:100%; overflow:hidden; font-family:Arial, sans-serif;}
+    #app-container { width:100%; height:100%; }
+    iframe { border:0; width:100%; height:100%; display:block; }
+
+    /* --- Modal Styles --- */
+    #timeoutModal {
+      display: none;
+      position: fixed;
+      top:0; left:0; right:0; bottom:0;
+      background: rgba(0,0,0,0.6);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
+    #timeoutModal .modal-content {
+      background: white;
+      border-radius: 12px;
+      max-width: 400px;
+      width: 90%;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+    #timeoutModal h2 {
+      margin-top: 0;
+      font-size: 1.4rem;
+      color: #333;
+    }
+    #timeoutModal p {
+      font-size: 1rem;
+      color: #555;
+      margin: 16px 0;
+    }
+    #timeoutModal .ref-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f7f7f7;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-bottom: 16px;
+      font-family: monospace;
+      font-size: 0.95rem;
+    }
+    #timeoutModal .ref-box button {
+      background: #4CAF50;
+      border: none;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    #timeoutModal .actions button {
+      background: #0066cc;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      margin-top: 8px;
+    }
+    #timeoutModal .actions button:hover {
+      background: #005bb5;
+    }
+  </style>
 </head>
 <body>
-    <div id="app-container">
-        <p style="text-align: center; padding-top: 50px;">Loading application...</p>
+  <div id="app-container">
+    <p style="text-align:center; padding-top:50px;">Loading application...</p>
+  </div>
+
+  <!-- Timeout Modal -->
+  <div id="timeoutModal">
+    <div class="modal-content">
+      <h2>Signup Timeout</h2>
+      <p>
+        We couldn’t confirm your signup in time.<br>
+        Please go to our main page and sign up there.
+      </p>
+      <div class="ref-box">
+        <span id="referralCodeDisplay"></span>
+        <button id="copyReferralBtn">Copy</button>
+      </div>
+      <div class="actions">
+        <button id="goMainBtn">Go to SpeaqQuiz</button>
+      </div>
     </div>
+  </div>
 
-    <script>
-    (function() {
-        console.log("LAUNCHER: Page loaded.");
-        const container = document.getElementById('app-container');
+  <script>
+  (function() {
+    const container       = document.getElementById('app-container');
+    const appsScriptUrl   = "https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec";
+    const statusCheckerUrl= "https://script.google.com/macros/s/AKfycbylrN0x0nXGbBLU4vH0t3YRwnKC3kO0cQ2z2GUSb1k5N-V4bv3TbKOAPcslPAdY3gRr/exec";
+    const googleSiteUrl   = "https://sites.google.com/view/speaqquiz";
 
-        // --- URLs ---
-        const appsScriptUrl     = "https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec";
-        const statusCheckerUrl  = "https://script.google.com/macros/s/AKfycbylrN0x0nXGbBLU4vH0t3YRwnKC3kO0cQ2z2GUSb1k5N-V4bv3TbKOAPcslPAdY3gRr/exec";
-        const googleSiteUrl     = "https://sites.google.com/view/speaqquiz";
-        // --- End URLs ---
+    let pollingIntervalId = null;
+    let pollingAttempts   = 0;
+    const maxPollingAttempts    = 60;    // 5 minutes total
+    const pollingIntervalMillis = 5000;  // every 5s
+    const redirectDelayMillis   = 10000; // 10s after success
 
-        // --- Polling Configuration ---
-        let pollingIntervalId = null;
-        let pollingAttempts   = 0;
-        const maxPollingAttempts    = 10;    // 60 × 5 s = 5 minutes
-        const pollingIntervalMillis = 5000;  // 5 s
-        const redirectDelayMillis   = 10000; // 10 s after success
-        // --- End Polling Configuration ---
+    const sessionId     = Date.now().toString(36) + Math.random().toString(36).substring(2);
+    const referralCode  = new URLSearchParams(window.location.search).get("ref");
 
-        if (!container) {
-            console.error("LAUNCHER: Container div not found!");
-            return;
-        }
+    // Insert iframe
+    let finalIframeUrl = appsScriptUrl + '?sessionId=' + encodeURIComponent(sessionId);
+    if (referralCode) finalIframeUrl += '&ref=' + encodeURIComponent(referralCode);
+    container.innerHTML = `<iframe src="${finalIframeUrl}"></iframe>`;
 
-        // --- Generate Session ID & get referral code ---
-        const sessionId    = Date.now().toString(36) + Math.random().toString(36).substring(2);
-        const currentUrlParams = new URLSearchParams(window.location.search);
-        const referralCode = currentUrlParams.get("ref");
-        console.log(`LAUNCHER: Referral code: '${referralCode}', Session ID: ${sessionId}`);
+    // Modal elements
+    const modal        = document.getElementById('timeoutModal');
+    const refDisplay   = document.getElementById('referralCodeDisplay');
+    const copyBtn      = document.getElementById('copyReferralBtn');
+    const goMainBtn    = document.getElementById('goMainBtn');
 
-        // --- Build iframe URL ---
-        let finalIframeUrl = appsScriptUrl;
-        const params = [];
-        if (referralCode) params.push(`ref=${encodeURIComponent(referralCode)}`);
-        params.push(`sessionId=${encodeURIComponent(sessionId)}`);
-        finalIframeUrl += `?${params.join('&')}`;
-        console.log("LAUNCHER: Iframe URL:", finalIframeUrl);
+    refDisplay.textContent = referralCode || '—';
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(referralCode || '')
+        .then(() => copyBtn.textContent = 'Copied!')
+        .catch(() => copyBtn.textContent = 'Failed');
+    });
+    goMainBtn.addEventListener('click', () => {
+      window.location.href = googleSiteUrl;
+    });
 
-        // --- Embed iframe ---
-        const iframe = document.createElement('iframe');
-        iframe.src    = finalIframeUrl;
-        container.innerHTML = '';
-        container.appendChild(iframe);
+    // Polling
+    function poll() {
+      pollingAttempts++;
+      if (pollingAttempts > maxPollingAttempts) {
+        clearInterval(pollingIntervalId);
+        modal.style.display = 'flex';
+        return;
+      }
+      fetch(`${statusCheckerUrl}?sessionId=${encodeURIComponent(sessionId)}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.status === 'success') {
+            clearInterval(pollingIntervalId);
+            setTimeout(() => window.location.href = googleSiteUrl, redirectDelayMillis);
+          }
+        })
+        .catch(console.error);
+    }
 
-        // --- Polling Function ---
-        function pollForSignupStatus() {
-            pollingAttempts++;
-            if (pollingAttempts > maxPollingAttempts) {
-                console.warn(`LAUNCHER: Timeout after ${maxPollingAttempts} polls.`);
-                clearInterval(pollingIntervalId);
+    // start
+    setTimeout(() => {
+      pollingIntervalId = setInterval(poll, pollingIntervalMillis);
+      poll();
+    }, pollingIntervalMillis);
 
-                // TIMEOUT: alert and redirect
-                alert(
-                  "We couldn’t confirm your signup in time.\n\n" +
-                  "You’ll be redirected to the SpeaqQuiz main page.\n\n" +
-                  "If you haven’t signed up yet, please do so there using your referral email:\n" +
-                  referralCode
-                );
-                window.location.href = googleSiteUrl;
-                return;
-            }
-
-            console.log(`LAUNCHER: Poll #${pollingAttempts} for session ${sessionId}`);
-            const checkUrl = `${statusCheckerUrl}?sessionId=${encodeURIComponent(sessionId)}`;
-
-            fetch(checkUrl)
-              .then(res => {
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                return res.json();
-              })
-              .then(data => {
-                console.log("LAUNCHER: Status response:", data);
-                if (data.status === 'success') {
-                  clearInterval(pollingIntervalId);
-                  console.log(`LAUNCHER: Success! Redirecting in ${redirectDelayMillis/1000}s.`);
-                  setTimeout(() => {
-                    window.location.href = googleSiteUrl;
-                  }, redirectDelayMillis);
-                } else {
-                  console.log("LAUNCHER: Still pending…");
-                }
-              })
-              .catch(err => {
-                console.error("LAUNCHER: Polling error:", err);
-              });
-        }
-
-        // --- Start Polling after initial delay ---
-        const initialPollingDelay = 5000; // 5 s
-        console.log(`LAUNCHER: Will start polling in ${initialPollingDelay/1000}s`);
-        setTimeout(() => {
-          pollingIntervalId = setInterval(pollForSignupStatus, pollingIntervalMillis);
-          pollForSignupStatus();
-        }, initialPollingDelay);
-
-    })();
-    </script>
+  })();
+  </script>
 </body>
 </html>
