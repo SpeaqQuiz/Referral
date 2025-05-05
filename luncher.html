@@ -6,155 +6,113 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         /* Ensure padding/borders are included in width/height */
-        * {
-            box-sizing: border-box;
-        }
-        /* Make html/body fill viewport, no margins/scrollbars */
-        html, body {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden; /* Prevent scrollbars on the main page */
-        }
-        /* Make container fill body */
-        #app-container {
-            width: 100%;
-            height: 100%;
-        }
-        /* Make iframe fill container */
-        iframe {
-            border: none; /* Remove default iframe border */
-            width: 100%;
-            height: 100%;
-            display: block; /* Prevent extra space below iframe */
-        }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+        #app-container { width: 100%; height: 100%; }
+        iframe { border: none; width: 100%; height: 100%; display: block; }
     </style>
 </head>
 <body>
     <div id="app-container">
         <p style="text-align: center; padding-top: 50px;">Loading application...</p>
-        </div>
+    </div>
 
     <script>
-      (function() {
-          console.log("LAUNCHER: Page loaded.");
-          const container = document.getElementById('app-container');
+    (function() {
+        console.log("LAUNCHER: Page loaded.");
+        const container = document.getElementById('app-container');
 
-          // --- URLs ---
-          // URL of the MAIN Apps Script App (embedded in iframe)
-          const appsScriptUrl = "https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec";
-          // URL of the SEPARATE Apps Script that checks the Sheet status
-          const statusCheckerUrl = "https://script.google.com/macros/s/AKfycbylrN0x0nXGbBLU4vH0t3YRwnKC3kO0cQ2z2GUSb1k5N-V4bv3TbKOAPcslPAdY3gRr/exec";
-          // Final destination URL (your Google Site)
-          const googleSiteUrl = "https://sites.google.com/view/speaqquiz";
-          // --- End URLs ---
+        // --- URLs ---
+        const appsScriptUrl     = "https://script.google.com/macros/s/AKfycbwRq1lHnNX6vpg3FSh3NJCDCdi6aZoBOaEHj4_K_BkFBl2cxhk9Gbc6OU8v5XTyNz09/exec";
+        const statusCheckerUrl  = "https://script.google.com/macros/s/AKfycbylrN0x0nXGbBLU4vH0t3YRwnKC3kO0cQ2z2GUSb1k5N-V4bv3TbKOAPcslPAdY3gRr/exec";
+        const googleSiteUrl     = "https://sites.google.com/view/speaqquiz";
+        // --- End URLs ---
 
-          // --- Polling Configuration ---
-          let pollingIntervalId = null; // To store the interval timer ID
-          let pollingAttempts = 0;
-          const maxPollingAttempts = 60; // Stop after 60 attempts (e.g., 60 * 5s = 5 minutes)
-          const pollingIntervalMillis = 5000; // Poll every 5 seconds
-          const redirectDelayMillis = 10000; // Wait 10 seconds after success before redirecting
-          // --- End Polling Configuration ---
+        // --- Polling Configuration ---
+        let pollingIntervalId = null;
+        let pollingAttempts   = 0;
+        const maxPollingAttempts    = 10;    // 60 × 5 s = 5 minutes
+        const pollingIntervalMillis = 5000;  // 5 s
+        const redirectDelayMillis   = 10000; // 10 s after success
+        // --- End Polling Configuration ---
 
+        if (!container) {
+            console.error("LAUNCHER: Container div not found!");
+            return;
+        }
 
-          if (!container) {
-              console.error("LAUNCHER: Container div 'app-container' not found!");
-              return; // Stop if container missing
-          }
+        // --- Generate Session ID & get referral code ---
+        const sessionId    = Date.now().toString(36) + Math.random().toString(36).substring(2);
+        const currentUrlParams = new URLSearchParams(window.location.search);
+        const referralCode = currentUrlParams.get("ref");
+        console.log(`LAUNCHER: Referral code: '${referralCode}', Session ID: ${sessionId}`);
 
-          // --- Generate Unique Session ID ---
-          const sessionId = Date.now().toString(36) + Math.random().toString(36).substring(2);
-          console.log(`LAUNCHER: Generated Session ID: ${sessionId}`);
+        // --- Build iframe URL ---
+        let finalIframeUrl = appsScriptUrl;
+        const params = [];
+        if (referralCode) params.push(`ref=${encodeURIComponent(referralCode)}`);
+        params.push(`sessionId=${encodeURIComponent(sessionId)}`);
+        finalIframeUrl += `?${params.join('&')}`;
+        console.log("LAUNCHER: Iframe URL:", finalIframeUrl);
 
-          // --- Get Referral Code from launcher page's URL ---
-          const currentUrlParams = new URLSearchParams(window.location.search);
-          const referralCode = currentUrlParams.get("ref");
-          console.log(`LAUNCHER: Referral code from URL: '${referralCode}'`);
+        // --- Embed iframe ---
+        const iframe = document.createElement('iframe');
+        iframe.src    = finalIframeUrl;
+        container.innerHTML = '';
+        container.appendChild(iframe);
 
-          // --- Construct iframe URL (for MAIN app) including ref and sessionId ---
-          let finalIframeUrl = appsScriptUrl;
-          let params = [];
-          if (referralCode) {
-              params.push(`ref=${encodeURIComponent(referralCode)}`);
-          }
-          params.push(`sessionId=${encodeURIComponent(sessionId)}`); // Always add sessionId
-          if (params.length > 0) {
-              finalIframeUrl += `?${params.join('&')}`;
-          }
-          console.log(`LAUNCHER: Final iframe URL set to: ${finalIframeUrl}`);
+        // --- Polling Function ---
+        function pollForSignupStatus() {
+            pollingAttempts++;
+            if (pollingAttempts > maxPollingAttempts) {
+                console.warn(`LAUNCHER: Timeout after ${maxPollingAttempts} polls.`);
+                clearInterval(pollingIntervalId);
 
-          // --- Create and embed the iframe ---
-          const iframe = document.createElement('iframe');
-          iframe.src = finalIframeUrl;
-          iframe.width = "100%";
-          iframe.height = "100%";
-          iframe.style.border = "0";
-          iframe.style.display = "block";
-          container.innerHTML = ''; // Clear loading text
-          container.appendChild(iframe);
-          console.log("LAUNCHER: Iframe added.");
+                // TIMEOUT: alert and redirect
+                alert(
+                  "We couldn’t confirm your signup in time.\n\n" +
+                  "You’ll be redirected to the SpeaqQuiz main page.\n\n" +
+                  "If you haven’t signed up yet, please do so there using your referral email:\n" +
+                  referralCode
+                );
+                window.location.href = googleSiteUrl;
+                return;
+            }
 
-          // --- Polling Function ---
-          function pollForSignupStatus() {
-              pollingAttempts++;
-              // Stop polling if max attempts reached
-              if (pollingAttempts > maxPollingAttempts) {
-                  console.warn(`LAUNCHER: Polling timeout reached (${maxPollingAttempts} attempts). Stopping polling for session ${sessionId}.`);
+            console.log(`LAUNCHER: Poll #${pollingAttempts} for session ${sessionId}`);
+            const checkUrl = `${statusCheckerUrl}?sessionId=${encodeURIComponent(sessionId)}`;
+
+            fetch(checkUrl)
+              .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+              })
+              .then(data => {
+                console.log("LAUNCHER: Status response:", data);
+                if (data.status === 'success') {
                   clearInterval(pollingIntervalId);
-                  return;
-              }
+                  console.log(`LAUNCHER: Success! Redirecting in ${redirectDelayMillis/1000}s.`);
+                  setTimeout(() => {
+                    window.location.href = googleSiteUrl;
+                  }, redirectDelayMillis);
+                } else {
+                  console.log("LAUNCHER: Still pending…");
+                }
+              })
+              .catch(err => {
+                console.error("LAUNCHER: Polling error:", err);
+              });
+        }
 
-              console.log(`LAUNCHER: Polling attempt #${pollingAttempts} for session ${sessionId}...`);
-              // Construct URL for the status checker Apps Script
-              const checkUrl = `${statusCheckerUrl}?sessionId=${encodeURIComponent(sessionId)}`;
+        // --- Start Polling after initial delay ---
+        const initialPollingDelay = 5000; // 5 s
+        console.log(`LAUNCHER: Will start polling in ${initialPollingDelay/1000}s`);
+        setTimeout(() => {
+          pollingIntervalId = setInterval(pollForSignupStatus, pollingIntervalMillis);
+          pollForSignupStatus();
+        }, initialPollingDelay);
 
-              fetch(checkUrl)
-                  .then(response => {
-                      if (!response.ok) {
-                          // Log HTTP errors but continue polling unless it's a fatal error type?
-                          console.error(`LAUNCHER: Polling fetch HTTP error! Status: ${response.status}`);
-                          return Promise.reject(`HTTP error ${response.status}`); // Stop this attempt
-                      }
-                      return response.json(); // Expecting {status: 'success' | 'pending' | 'error...'}
-                  })
-                  .then(data => {
-                      console.log("LAUNCHER: Received status check response:", data);
-                      if (data && data.status === 'success') {
-                          // SUCCESS! Stop polling and redirect after delay
-                          console.log("LAUNCHER: Signup success confirmed via Sheet polling!");
-                          clearInterval(pollingIntervalId); // Stop polling timer
-                          console.log(`LAUNCHER: Starting ${redirectDelayMillis / 1000}-second timer before redirecting...`);
-                          setTimeout(() => {
-                              console.log("LAUNCHER: Redirecting now to:", googleSiteUrl);
-                              window.location.href = googleSiteUrl; // Perform the redirect
-                          }, redirectDelayMillis);
-                      } else {
-                          // Status is pending or an error occurred on backend check, continue polling
-                          console.log("LAUNCHER: Status is pending or error, will poll again.");
-                      }
-                  })
-                  .catch(error => {
-                      // Network errors or JSON parsing errors
-                      console.error("LAUNCHER: Error during polling fetch/processing:", error);
-                      // Optional: Decide whether to stop polling on fetch errors
-                      // clearInterval(pollingIntervalId);
-                  });
-          } // End pollForSignupStatus function
-
-          // --- Start Polling Timer ---
-          // Wait a few seconds initially before starting to poll
-          const initialPollingDelay = 5000; // 5 seconds
-          console.log(`LAUNCHER: Starting polling in ${initialPollingDelay / 1000} seconds.`);
-          setTimeout(() => {
-              // Start the interval timer
-              pollingIntervalId = setInterval(pollForSignupStatus, pollingIntervalMillis);
-              // Run the first check immediately
-              pollForSignupStatus();
-          }, initialPollingDelay);
-
-      })(); // End IIFE
+    })();
     </script>
-
 </body>
 </html>
