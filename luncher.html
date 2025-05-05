@@ -125,7 +125,7 @@
     let pollingAttempts    = 0;
     const maxPollingAttempts    = 60;    // 5 minutes
     const pollingIntervalMillis = 5000;  // every 5s
-    const autoRedirectMillis    = 30000; // 10s after modal
+    const autoRedirectMillis    = 60000; // 10s after modal
 
     const sessionId    = Date.now().toString(36) + Math.random().toString(36).substring(2);
     const referralCode = new URLSearchParams(window.location.search).get("ref") || '';
