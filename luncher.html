@@ -2,15 +2,90 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Speaq Quiz - Loading...</title>
+  <title>Speaq Quiz - Referral Registration</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     * { box-sizing: border-box; }
-    html, body { margin:0; padding:0; height:100%; overflow:hidden; font-family:Arial, sans-serif;}
-    #app-container { width:100%; height:100%; }
-    iframe { border:0; width:100%; height:100%; display:block; }
+    
+    /* Use Flexbox to stack the Notice Bar and the App vertically */
+    html, body { 
+      margin: 0; 
+      padding: 0; 
+      height: 100%; 
+      overflow: hidden; 
+      font-family: Arial, sans-serif;
+      display: flex; 
+      flex-direction: column; /* Stack children vertically */
+    }
 
-    /* --- Shared Modal Styles --- */
+    /* --- Top Notice Bar Styles --- */
+    #top-notice-bar {
+      background-color: #fff3cd; /* Warning Yellow background */
+      color: #856404;            /* Darker yellow/brown text */
+      padding: 12px 15px;
+      text-align: center;
+      border-bottom: 1px solid #ffeeba;
+      flex: 0 0 auto;            /* Fixed height, won't shrink */
+      z-index: 100;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    #top-notice-bar p {
+      margin: 0;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      max-width: 800px;
+    }
+
+    #top-notice-bar button {
+      background-color: #0066cc;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+
+    #top-notice-bar button:hover {
+      background-color: #005bb5;
+    }
+
+    /* --- App Container (Iframe) --- */
+    #app-container { 
+      width: 100%; 
+      flex: 1; /* Takes up all remaining vertical space */
+      position: relative;
+    }
+    
+    iframe { 
+      border: 0; 
+      width: 100%; 
+      height: 100%; 
+      display: block; 
+    }
+
+    /* --- Responsive adjust for mobile --- */
+    @media (max-width: 600px) {
+      #top-notice-bar {
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+      }
+      #top-notice-bar p {
+        font-size: 0.8rem;
+      }
+    }
+
+    /* --- Shared Modal Styles (Unchanged) --- */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -77,11 +152,22 @@
   </style>
 </head>
 <body>
-  <div id="app-container">
-    <p style="text-align:center; padding-top:50px;">Loading application...</p>
+
+  <div id="top-notice-bar">
+    <p>
+      <strong>⚠️ NOTICE:</strong> This is a referral link strictly for <strong>registration only</strong>. 
+      After a successful signup, kindly visit our main address (sites.google.com/view/speaqquiz) to start using Speaq Quiz. 
+      Continuing on this page for study will lead to a <strong>sudden log out</strong>.
+    </p>
+    <button onclick="window.location.href='https://sites.google.com/view/speaqquiz'">
+      Go to Main Site
+    </button>
   </div>
 
-  <!-- Timeout Modal -->
+  <div id="app-container">
+    <p style="text-align:center; padding-top:50px; color: #666;">Loading application...</p>
+  </div>
+
   <div id="timeoutModal" class="modal-overlay">
     <div class="modal-content">
       <h2>Signup Timeout</h2>
@@ -99,12 +185,11 @@
     </div>
   </div>
 
-  <!-- Success Modal -->
   <div id="successModal" class="modal-overlay">
     <div class="modal-content">
       <h2>Signup Confirmed!</h2>
       <p>Your account is ready! Check your inbox for your 4‑digit PIN.<br>
-       Please bookmark our main page for subsequent visits:</p>
+        Please bookmark our main page for subsequent visits:</p>
 
         <p style="font-family: monospace; color: #0066cc; word-break: break-all;">
         https://sites.google.com/view/speaqquiz
@@ -127,7 +212,7 @@
     let pollingAttempts    = 0;
     const maxPollingAttempts    = 60;    // 5 minutes
     const pollingIntervalMillis = 5000;  // every 5s
-    const autoRedirectMillis    = 60000; // 10s after modal
+    const autoRedirectMillis    = 60000; // 60s after modal
 
     const sessionId    = Date.now().toString(36) + Math.random().toString(36).substring(2);
     const referralCode = new URLSearchParams(window.location.search).get("ref") || '';
